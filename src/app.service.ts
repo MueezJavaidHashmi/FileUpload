@@ -8,7 +8,8 @@ import { Request, Response } from 'express';
 import * as AWS from 'aws-sdk';
 import { ConfigService } from '@nestjs/config';
 import { ConfigServiceInterface } from './common/types/interface';
-import { Sharp } from "sharp";
+import { Sharp } from 'sharp';
+import sizeOf from 'image-size';
 
 @Injectable()
 export class AppService {
@@ -75,9 +76,25 @@ export class AppService {
       let stream: Sharp | fs.ReadStream;
 
       if (isImage) {
-        const resizeSize =
-          imageSizeEnum[this.configService.get('IMAGE_SIZE')] ||
-          defaultImageSize;
+        const allowedImageSize =
+          imageSizeEnum[this.configService.get('IMAGE_SIZE')] || 2048;
+
+        const dimensions = sizeOf(filePath);
+
+        if (
+          dimensions.height > allowedImageSize ||
+          dimensions.width > allowedImageSize
+        ) {
+          fs.unlinkSync(filePath);
+          return res.status(HttpStatus.BAD_REQUEST).send({
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: errorMessages.MAXIMUM_DIMENSION_EXCEEDED,
+          });
+        }
+
+        const resizeSize = parseInt(
+          this.configService.get('RESIZE_SIZE') || `${defaultImageSize}`,
+        );
 
         stream = resizeImage(filePath, resizeSize);
       } else {

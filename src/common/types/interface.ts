@@ -7,6 +7,7 @@ export interface ConfigServiceInterface {
   SIZE_LIMIT: number;
   ALLOWED_EXTENSIONS: string;
   ALLOWED_CONTENT_TYPES: string;
+  RESIZE_SIZE: number;
 };
 
 export interface FileUploadParamsInterface {
